@@ -1,3 +1,6 @@
+for admin login
+email:rahul@gmail.com
+pass:Rahul123
 
 live link 
 https://ecom-45uz.onrender.com/
