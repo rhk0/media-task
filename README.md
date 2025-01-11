@@ -17,6 +17,9 @@ in backend
 5. "nodemon" or "node server.js" or npm run dev 
 
 
-6. below is mentinod live link 
+Thanks in Advance for Considering this 
+if any issue contact : 9111642625
+email: rhk0012@gmail.com
+
 
 
