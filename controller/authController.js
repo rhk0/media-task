@@ -45,7 +45,7 @@ export const googleAuth = async (req, res) => {
       user = await User.create({ name, email, googleId });
     }
     const jwtToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1d' });
-    res.status(200).json({ message: 'Google OAuth successful', token: jwtToken });
+    res.status(200).json({ message: 'Google OAuth successful', token: jwtToken,role:user.role,name:user.name });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
