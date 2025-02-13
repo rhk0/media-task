@@ -1,197 +1,100 @@
-
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { FaSearch, FaShoppingCart } from 'react-icons/fa';
-import UserSidebar from './UserSidebar';
-import CartModal from './CartModal';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import UserSidebar from "./UserSidebar";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const UserDash = () => {
-  const [products, setProducts] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [cart, setCart] = useState(null); // Cart initialized to null
-  const [filteredProducts, setFilteredProducts] = useState([]);
-  const [isCartModalOpen, setIsCartModalOpen] = useState(false);
- const navigate =useNavigate()
+  const [media, setMedia] = useState([]);
+  const [error, setError] = useState("");
+  const [token, setToken] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(6);
+  const navigate = useNavigate();
+
   useEffect(() => {
-    const token = sessionStorage.getItem('authToken');
-
-    // Fetch Products
-    const fetchProducts = async () => {
-      try {
-        const response = await axios.get('/api/v1/product/all', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setProducts(response.data.products);
-        setFilteredProducts(response.data.products); // Initialize filtered products with all products
-      } catch (error) {
-        console.error('Error fetching products:', error);
-      }
-    };
-
-    // Fetch Cart
-    const fetchCart = async () => {
-      try {
-        const response = await axios.get('/api/v1/cart/get', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-    
-        setCart(response.data); // Set the cart data
-      } catch (error) {
-        console.error('Error fetching cart:', error);
-      }
-    };
-
-    fetchProducts();
-    fetchCart();
+    const storedToken = sessionStorage.getItem("authToken");
+    setToken(storedToken);
   }, []);
 
   useEffect(() => {
-    if (searchQuery) {
-      setFilteredProducts(
-        products.filter((product) =>
-          product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          product.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          product.price.toString().includes(searchQuery)
-        )
-      );
-    } else {
-      setFilteredProducts(products);
-    }
-  }, [searchQuery, products]);
-
-  const handleSearchChange = (e) => {
-    setSearchQuery(e.target.value);
-  };
-
-  const handleAddToCart = async (product) => {
-    const token = sessionStorage.getItem('authToken');
-    try {
-      const quantity = 1; // Assuming the quantity to add is 1
-      const response = await axios.post(
-        '/api/v1/cart/add',
-        { productId: product._id, quantity }, // Send both productId and quantity
-        {
+    if (!token) return;
+    const fetchMedia = async () => {
+      try {
+        const { data } = await axios.get("/api/media/media", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
-      );
-      setCart(response.data); // Update the cart after adding
-    } catch (error) {
-      console.error('Error adding to cart:', error);
-    }
-  };
-
-  const handleRemoveFromCart = async (productId) => {
-    const token = sessionStorage.getItem('authToken');
-    try {
-      const response = await axios.post(
-        '/api/v1/cart/remove',
-        { productId },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      setCart(response.data); // Update the cart after removal
-    } catch (error) {
-      console.error('Error removing from cart:', error);
-    }
-  };
-
-  const handleUpdateQuantity = async (productId, quantity) => {
-    const token = sessionStorage.getItem('authToken');
-    try {
-      const response = await axios.post(
-        '/api/v1/cart/update',
-        { productId, quantity },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      setCart(response.data); // Update the cart after changing quantity
-    } catch (error) {
-      console.error('Error updating quantity:', error);
-    }
-  };
+        });
+        setMedia(data);
+      } catch (err) {
+        setError("Error fetching media");
+      }
+    };
+    fetchMedia();
+  }, [token]);
 
   const handleLogout = () => {
-    sessionStorage.removeItem('authToken');
-    navigate('/'); // Redirect to login
+    sessionStorage.removeItem("authToken");
+    navigate("/");
   };
 
-  const toggleCartModal = () => {
-    setIsCartModalOpen(!isCartModalOpen);
-  };
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = media.slice(indexOfFirstItem, indexOfLastItem);
+
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   return (
     <UserSidebar>
-      <div className="w-full max-w-4xl bg-white p-6 rounded-lg shadow-lg">
+      <div className="w-full max-w-6xl bg-white p-6 rounded-lg shadow-lg mx-auto">
         <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center space-x-4">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={handleSearchChange}
-              placeholder="Search by name, category, or price"
-              className="p-2 border border-gray-300 rounded-lg w-96"
-            />
-            <FaSearch className="text-gray-600" />
-          </div>
-          <div className="flex items-center">
-            <button
-              onClick={handleLogout}
-              className="bg-red-600 text-white py-2 px-4 rounded-lg shadow-md hover:bg-red-700 focus:outline-none"
-            >
-              Logout
-            </button>
-            <div className="relative ml-6">
-              <button className="text-gray-600" onClick={toggleCartModal}>
-                <FaShoppingCart className="text-4xl" />
-              </button>
-              {cart && cart.products && cart.products.length > 0 && (
-                <span className="absolute top-0 right-0 text-white text-xs bg-red-600 rounded-full w-5 h-5 flex items-center justify-center">
-                  {cart.products.length}
-                </span>
-              )}
-            </div>
-          </div>
+          <h2 className="text-2xl font-bold">Media Gallery</h2>
+          <button
+            onClick={handleLogout}
+            className="bg-red-600 text-white py-2 px-4 rounded-lg shadow-md hover:bg-red-700 focus:outline-none"
+          >
+            Logout
+          </button>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredProducts.map((product) => (
-            <div key={product._id} className="bg-green-50 p-6 rounded-lg shadow-md">
-              <img
-                src={`/api/v1/uploads/${product.image}`}
-                alt={product.name}
-                className="w-full h-48 object-cover rounded-md mb-4"
-              />
-              <h3 className="text-xl font-semibold text-gray-700 mb-3">{product.name}</h3>
-              <p className="text-gray-600">{product.category}</p>
-              <p className="text-gray-600">{`₹ ${product.price}`}</p>
-              <button
-                onClick={() => handleAddToCart(product)}
-                className="bg-blue-600 text-white py-2 px-4 rounded-lg mt-4"
-              >
-                Add to Cart
-              </button>
+        {error && <p className="text-red-500 mb-4">{error}</p>}
+        <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {currentItems.map(({ url, filename, _id, type }) => (
+            <div key={_id} className="border rounded-lg overflow-hidden shadow-md">
+              {/* Check if the media is an image or video */}
+              {type && type.includes("image") ? (
+                <img
+                  src={`http://localhost:5000${url}`}
+                  className="w-full h-48 object-cover"
+                />
+              ) : type && type.includes("video") ? (
+                <video controls className="w-full h-48">
+                  <source src={`http://localhost:5000${url}`} type="video/mp4" />
+                  Your browser does not support the video tag.
+                </video>
+              ) : (
+                <p className="p-4 text-gray-600">Unsupported media type</p>
+              )}
+      
             </div>
           ))}
         </div>
+        {/* Pagination */}
+        <div className="flex justify-center mt-6">
+          {Array.from({ length: Math.ceil(media.length / itemsPerPage) }, (_, i) => (
+            <button
+              key={i}
+              onClick={() => paginate(i + 1)}
+              className={`mx-1 px-4 py-2 rounded-lg ${
+                currentPage === i + 1
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-200 text-gray-800"
+              }`}
+            >
+              {i + 1}
+            </button>
+          ))}
+        </div>
       </div>
-
-      <CartModal
-        isOpen={isCartModalOpen}
-        closeModal={toggleCartModal}
-        cart={cart}
-        setCart={setCart} 
-        handleRemoveFromCart={handleRemoveFromCart}
-        handleUpdateQuantity={handleUpdateQuantity} // Pass update function to CartModal
-      />
     </UserSidebar>
   );
 };
